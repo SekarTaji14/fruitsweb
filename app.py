@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import tensorflow as tf
 import numpy as np
 
 app = Flask(__name__)
+CORS(app)
 
 # Folder untuk menyimpan file yang diunggah
 UPLOAD_FOLDER = './static/uploads/'
