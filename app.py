@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import tensorflow as tf
@@ -32,46 +32,51 @@ def process_image(image_path):
     except Exception as e:
         raise ValueError(f"Failed to process image at path: {image_path}. Error: {str(e)}")
 
+# Halaman utama
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return "Welcome to Freshify Backend!"
 
-@app.route('/predict', methods=['GET', 'POST'])
+# Endpoint untuk prediksi
+@app.route('/predict', methods=['POST'])
 def predict():
-    if request.method == 'POST':
-        if 'foto' not in request.files:
-            return "No file uploaded", 400
-        
-        imagefile = request.files['foto']
-        if imagefile.filename == '':
-            return "No selected file", 400
+    # Periksa apakah file diunggah
+    if 'foto' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
 
-        # Simpan file dengan nama yang aman
-        filename = secure_filename(imagefile.filename)
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        try:
-            imagefile.save(image_path)
-        except Exception as e:
-            return f"Failed to save file. Error: {str(e)}", 500
+    imagefile = request.files['foto']
+    if imagefile.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-        # Proses gambar dan prediksi
-        try:
-            img_array = process_image(image_path)
-            prediction = model.predict(img_array)
-        except Exception as e:
-            return f"Failed to process image for prediction. Error: {str(e)}", 500
+    # Simpan file dengan nama yang aman
+    filename = secure_filename(imagefile.filename)
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    try:
+        imagefile.save(image_path)
+    except Exception as e:
+        return jsonify({'error': f"Failed to save file. Error: {str(e)}"}), 500
 
-        # Logika klasifikasi berdasarkan output model
-        class_names = ['Fresh Apple', 'Fresh Banana', 'Fresh Orange', 'Rotten Apple', 'Rotten Banana', 'Rotten Orange']
-        predicted_class = class_names[np.argmax(prediction)]
+    # Proses gambar dan prediksi
+    try:
+        img_array = process_image(image_path)
+        prediction = model.predict(img_array)
+    except Exception as e:
+        return jsonify({'error': f"Failed to process image for prediction. Error: {str(e)}"}), 500
 
-        return render_template('predict.html', prediction=f"Prediction: {predicted_class}", image_path=image_path)
+    # Logika klasifikasi berdasarkan output model
+    class_names = ['Fresh Apple', 'Fresh Banana', 'Fresh Orange', 'Rotten Apple', 'Rotten Banana', 'Rotten Orange']
+    predicted_class = class_names[np.argmax(prediction)]
 
-    return render_template('predict.html')
+    # Response JSON
+    return jsonify({
+        'prediction': predicted_class,
+        'image_path': f'static/uploads/{filename}'  # Path relatif untuk gambar
+    })
 
+# Halaman about
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    return "This is the Freshify Backend API!"
 
 if __name__ == "__main__":
     app.run(debug=True)
