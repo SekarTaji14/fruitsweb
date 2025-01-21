@@ -4,3 +4,4 @@ tensorflow==2.18.0
 gunicorn==23.0.0
 pillow==10.0.1
 wheel==0.45.1
+flask_cors
