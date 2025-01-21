@@ -78,5 +78,13 @@ def predict():
 def about():
     return "This is the Freshify Backend API!"
 
+# Route debugging
+@app.route('/debug', methods=['GET', 'POST'])
+def debug():
+    return jsonify({
+        "message": "Debug route working!",
+        "method": request.method
+    })
+
 if __name__ == "__main__":
     app.run(debug=True)
